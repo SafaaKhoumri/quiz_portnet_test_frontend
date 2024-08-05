@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Button, Box, Typography, Paper, FormControl, FormControlLabel, Radio, RadioGroup, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import { grey, common } from '@mui/material/colors';
 import { styled } from '@mui/system';
@@ -21,30 +22,26 @@ const TestBox = styled(Paper)(({ theme }) => ({
   boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.1)',
 }));
 
-const exampleQuestions = [
-  {
-    question: "What is the capital of France?",
-    choices: ["Paris", "London", "Rome"],
-    correctAnswer: "Paris"
-  },
-  {
-    question: "What is the boiling point of water?",
-    choices: ["90°C", "100°C", "110°C"],
-    correctAnswer: "100°C"
-  },
-  {
-    question: "What is the largest planet in our Solar System?",
-    choices: ["Earth", "Jupiter", "Saturn"],
-    correctAnswer: "Jupiter"
-  },
-];
-
 const TakeTest = () => {
+  const { id } = useParams();
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState(new Array(exampleQuestions.length).fill(''));
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [started, setStarted] = useState(false);
+
+  useEffect(() => {
+    // Fetch the questions for the test ID
+    fetch(`http://localhost:8088/api/tests/${id}/questions`)
+      .then(response => response.json())
+      .then(data => {
+        console.log('Fetched questions:', data); // Debug line
+        setQuestions(data);
+        setAnswers(new Array(data.length).fill(''));
+      })
+      .catch(error => console.error('Error fetching questions:', error));
+  }, [id]);
 
   const handleChange = (event) => {
     const newAnswers = [...answers];
@@ -53,7 +50,7 @@ const TakeTest = () => {
   };
 
   const handleNext = () => {
-    if (currentQuestion < exampleQuestions.length - 1) {
+    if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     }
   };
@@ -72,6 +69,20 @@ const TakeTest = () => {
     setOpenDialog(false);
     if (confirm) {
       setSubmitted(true);
+      // Submit the answers to the backend
+      fetch(`http://localhost:8088/api/tests/${id}/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ answers })
+      }).then(response => {
+        if (response.ok) {
+          alert('Test submitted successfully!');
+        } else {
+          alert('Failed to submit test.');
+        }
+      }).catch(error => console.error('Error submitting test:', error));
     }
   };
 
@@ -100,16 +111,16 @@ const TakeTest = () => {
                 Prendre le Test
               </Typography>
               <TestBox>
-                <Typography variant="h6" component="h2" gutterBottom style={{ marginBottom: '5%', marginLeft:'40%' }}>
-                  Question {currentQuestion + 1} / {exampleQuestions.length}
+                <Typography variant="h6" component="h2" gutterBottom style={{ marginBottom: '5%', marginLeft: '40%' }}>
+                  Question {currentQuestion + 1} / {questions.length}
                 </Typography>
                 <Typography variant="h6" component="h2" gutterBottom>
-                  {exampleQuestions[currentQuestion].question}
+                  {questions[currentQuestion]?.questionText}
                 </Typography>
                 <FormControl component="fieldset">
                   <RadioGroup value={answers[currentQuestion]} onChange={handleChange}>
-                    {exampleQuestions[currentQuestion].choices.map((choice, index) => (
-                      <FormControlLabel key={index} value={choice} control={<Radio />} label={choice} />
+                    {questions[currentQuestion]?.choices.map((choice, index) => (
+                      <FormControlLabel key={index} value={choice.choiceText} control={<Radio />} label={choice.choiceText} />
                     ))}
                   </RadioGroup>
                 </FormControl>
@@ -120,23 +131,17 @@ const TakeTest = () => {
                         variant="contained"
                         color="primary"
                         onClick={handlePrevious}
-                        sx={{ backgroundColor: '#232A56', '&:hover': { 
-                            backgroundColor: grey[400], 
-                            color: '#232A56' 
-                          },  }}
+                        sx={{ backgroundColor: '#232A56', '&:hover': { backgroundColor: grey[400], color: '#232A56' } }}
                       >
                         Précédent
                       </Button>
                     )}
-                    {currentQuestion < exampleQuestions.length - 1 ? (
+                    {currentQuestion < questions.length - 1 ? (
                       <Button
                         variant="contained"
                         color="primary"
                         onClick={handleNext}
-                        sx={{ backgroundColor: '#232A56', '&:hover': { 
-                            backgroundColor: grey[400], 
-                            color: '#232A56' 
-                          },  }}
+                        sx={{ backgroundColor: '#232A56', '&:hover': { backgroundColor: grey[400], color: '#232A56' } }}
                       >
                         Suivant
                       </Button>
@@ -145,10 +150,7 @@ const TakeTest = () => {
                         variant="contained"
                         color="primary"
                         onClick={handleSubmit}
-                        sx={{ backgroundColor: '#232A56', '&:hover': { 
-                            backgroundColor: grey[400], 
-                            color: '#232A56' 
-                          },  }}
+                        sx={{ backgroundColor: '#232A56', '&:hover': { backgroundColor: grey[400], color: '#232A56' } }}
                       >
                         Soumettre
                       </Button>

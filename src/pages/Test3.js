@@ -21,7 +21,6 @@ function Test3() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [testName, setTestName] = useState('');
-  const [testLanguage, setTestLanguage] = useState('');
 
   const handleCandidateChange = (index, e) => {
     const { name, value } = e.target;
@@ -41,7 +40,6 @@ function Test3() {
     try {
       console.log('Submitting test data', {
         testName,
-        testLanguage,
         adminEmail,
         domain,
         role,
@@ -53,7 +51,6 @@ function Test3() {
       // Stocker le test dans la base de données
       const testResponse = await axios.post('http://localhost:8088/api/tests', {
         testName,
-        testLanguage,
         adminEmail,
         domaineId: domain,
         roleId: role,
@@ -67,7 +64,6 @@ function Test3() {
       // Envoyer les emails aux candidats
       await axios.post('http://localhost:8088/api/sendTest', {
         testName,
-        testLanguage,
         adminEmail,
         domaineId: domain,
         roleId: role,
@@ -137,15 +133,6 @@ function Test3() {
             placeholder="Entrer le nom du test"
             value={testName}
             onChange={(e) => setTestName(e.target.value)}
-            variant="outlined"
-            style={{ width: '100%', marginBottom: 20, padding: 5, borderRadius: 30, fontSize: '1em' }}
-          />
-          <TextField
-            type="text"
-            name="testLanguage"
-            placeholder="Entrer la langue du test"
-            value={testLanguage}
-            onChange={(e) => setTestLanguage(e.target.value)}
             variant="outlined"
             style={{ width: '100%', marginBottom: 20, padding: 5, borderRadius: 30, fontSize: '1em' }}
           />
