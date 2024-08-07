@@ -36,49 +36,35 @@ function Test3() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const competencyIds = selectedCompetencies.map(comp => comp.id);
-  
+
     try {
-      console.log('Submitting test data', {
-        testName,
-        adminEmail,
-        domain,
-        role,
-        level,
-        competencyIds,
-        candidates
-      });
-  
-      // Stocker le test dans la base de données
-      const testResponse = await axios.post('http://localhost:8088/api/tests', {
-        testName,
-        adminEmail,
-        domaineId: domain,
-        roleId: role,
-        levelId: level,
-        competencyIds,
-        candidates
-      });
-  
-      console.log('Test response', testResponse.data);
-  
-      // Envoyer les emails aux candidats
-      await axios.post('http://localhost:8088/api/sendTest', {
-        testName,
-        adminEmail,
-        domaineId: domain,
-        roleId: role,
-        levelId: level,
-        competencyIds,
-        candidates
-      });
-  
-      alert('Emails sent and test stored successfully!');
+        console.log('Submitting test data', {
+            testName,
+            adminEmail,
+            domain,
+            role,
+            level,
+            competencyIds,
+            candidates
+        });
+
+        // Call the combined endpoint
+        const response = await axios.post('http://localhost:8088/api/createAndSendTest', {
+            testName,
+            adminEmail,
+            domaineId: domain,
+            roleId: role,
+            levelId: level,
+            competencyIds,
+            candidates
+        });
+
+        alert(response.data);
     } catch (error) {
-      console.error('Error sending emails and storing test:', error);
-      alert('Failed to send emails and store test.');
+        console.error('Error sending emails and storing test:', error);
+        alert('Failed to send emails and store test.');
     }
-  };
-  
+};
 
   const handleVisualizeTest = async () => {
     try {
