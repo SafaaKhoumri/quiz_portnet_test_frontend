@@ -63,28 +63,39 @@ const TakeTest = () => {
 
   const handleSubmit = () => {
     setOpenDialog(true);
-  };
+};
 
-  const handleCloseDialog = (confirm) => {
+const handleCloseDialog = (confirm) => {
     setOpenDialog(false);
     if (confirm) {
-      setSubmitted(true);
-      // Submit the answers to the backend
-      fetch(`http://localhost:8088/api/tests/${id}/submit`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ answers })
-      }).then(response => {
-        if (response.ok) {
-          alert('Test submitted successfully!');
-        } else {
-          alert('Failed to submit test.');
-        }
-      }).catch(error => console.error('Error submitting test:', error));
+        setSubmitted(true);
+
+        const answerRequests = questions.map((question, index) => {
+            const selectedChoice = question.choices.find(choice => choice.choiceText === answers[index]);
+            return {
+                questionId: question.id,
+                candidatId: 1,  // Replace with the actual candidate ID
+                texteReponse: answers[index],
+                estCorrecte: selectedChoice ? selectedChoice.isCorrect : false
+            };
+        });
+
+        fetch(`http://localhost:8088/api/tests/${id}/submit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(answerRequests)
+        }).then(response => {
+            if (response.ok) {
+                alert('Test submitted successfully!');
+            } else {
+                alert('Failed to submit test.');
+            }
+        }).catch(error => console.error('Error submitting test:', error));
     }
-  };
+};
+
 
   const handleStart = () => {
     setStarted(true);
