@@ -5,15 +5,14 @@ import {
   AppBar,
   Toolbar,
   Typography,
-  Container,
   List,
   ListItem,
   ListItemText,
   Button,
   Box,
-  TextField,
   Modal,
   Link,
+  TextField,
 } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import PersonIcon from '@mui/icons-material/Person';
@@ -26,30 +25,72 @@ function TestList() {
   const [isParamsModalOpen, setIsParamsModalOpen] = useState(false);
   const [isCandidatesModalOpen, setIsCandidatesModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [testParams, setTestParams] = useState({});
+  const [candidates, setCandidates] = useState([]);
+  const [questions, setQuestions] = useState([]);
 
   useEffect(() => {
-    // Charger les tests depuis la base de données
-    // Remplacer l'exemple de tests par une requête API réelle
-    setTests([
-      { id: 1, name: 'Test 1' },
-      { id: 2, name: 'Test 2' },
-    ]);
+    const fetchTests = async () => {
+      try {
+        const response = await fetch('http://localhost:8088/api/tests');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Fetched tests:', data); // Log the fetched tests
+        setTests(data);
+      } catch (error) {
+        console.error('Error fetching tests:', error);
+      }
+    };
+    fetchTests();
   }, []);
 
-  const handleTestClick = (test) => {
+  const handleTestClick = async (test) => {
     setSelectedTest(test);
+    try {
+      const response = await fetch(`http://localhost:8088/api/tests/${test.id}`);
+      const data = await response.json();
+      console.log('Fetched test params:', data); // Log the fetched test params
+      setTestParams(data);
+    } catch (error) {
+      console.error('Error fetching test params:', error);
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8088/api/tests/${test.id}/questions`);
+      const data = await response.json();
+      console.log('Fetched test questions:', data); // Log the fetched test questions
+      setQuestions(data);
+    } catch (error) {
+      console.error('Error fetching test questions:', error);
+    }
   };
 
-  const handleParamsModalOpen = () => {
+  const handleParamsModalOpen = async () => {
     setIsParamsModalOpen(true);
+    try {
+      const response = await fetch(`http://localhost:8088/api/tests/${selectedTest.id}`);
+      const data = await response.json();
+      setTestParams(data);
+    } catch (error) {
+      console.error('Error fetching test params:', error);
+    }
   };
 
   const handleParamsModalClose = () => {
     setIsParamsModalOpen(false);
   };
 
-  const handleCandidatesModalOpen = () => {
+  const handleCandidatesModalOpen = async () => {
     setIsCandidatesModalOpen(true);
+    try {
+      const response = await fetch(`http://localhost:8088/api/tests/${selectedTest.id}/candidates`);
+      const data = await response.json();
+      setCandidates(data);
+    } catch (error) {
+      console.error('Error fetching candidates:', error);
+    }
   };
 
   const handleCandidatesModalClose = () => {
@@ -96,14 +137,14 @@ function TestList() {
           </Button>
         </Toolbar>
       </AppBar>
-      <div style={{ display: 'flex', width: '100%', marginTop: '64px', backgroundColor:'#D9D9D9'}}>
-        <Box sx={{ width: '20%', padding: '3%', backgroundColor:'#232A56', color:'#fff'}}>
+      <div style={{ display: 'flex', width: '100%', marginTop: '64px', backgroundColor: '#D9D9D9' }}>
+        <Box sx={{ width: '20%', padding: '3%', backgroundColor: '#232A56', color: '#fff' }}>
           <Typography variant="h6">Tests</Typography>
-          <List >
-            {tests.map((test) => (
-              <ListItem 
-                button 
-                key={test.id} 
+          <List>
+            {tests.map(test => (
+              <ListItem
+                button
+                key={test.id}
                 onClick={() => handleTestClick(test)}
                 sx={{
                   backgroundColor: selectedTest && selectedTest.id === test.id ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
@@ -122,12 +163,12 @@ function TestList() {
           {selectedTest ? (
             <>
               <Typography variant="h5" style={{ textAlign: 'center', padding: '20px 0' }}>{selectedTest.name}</Typography>
-              <div style={{ textAlign: 'right', margin: '2%'}}>
+              <div style={{ textAlign: 'right', margin: '2%' }}>
                 <Button
                   type="button"
                   variant="contained"
                   color="primary"
-                  style={{ borderRadius: 30, width: '5%', backgroundColor: 'rgba(35, 42, 86, 0.66)', color: '#000', cursor: 'pointer',margin: '1%' }}
+                  style={{ borderRadius: 30, width: '5%', backgroundColor: 'rgba(35, 42, 86, 0.66)', color: '#000', cursor: 'pointer', margin: '1%' }}
                   onClick={handleParamsModalOpen}
                 >
                   <SettingsIcon />
@@ -145,46 +186,56 @@ function TestList() {
                   type="button"
                   variant="contained"
                   color="primary"
-                  style={{ borderRadius:30, width: '5%', backgroundColor: 'rgba(35, 42, 86, 0.66)', color: '#000', cursor: 'pointer',margin: '1%' }}
+                  style={{ borderRadius: 30, width: '5%', backgroundColor: 'rgba(35, 42, 86, 0.66)', color: '#000', cursor: 'pointer', margin: '1%' }}
                   onClick={handleInviteModalOpen}
                 >
                   <AddIcon />
                 </Button>
               </div>
-              {/* Afficher les questions du test ici */}
               <div>
                 <Typography variant="h6">Questions</Typography>
-                {/* Remplacer par les questions réelles du test */}
                 <ul>
-                  <li>Question 1</li>
-                  <li>Question 2</li>
+                  {questions.map((question, index) => (
+                    <li key={index}>{question.questionText}</li>
+                  ))}
                 </ul>
               </div>
             </>
           ) : (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '64px', color: '#888888' }}>
-              <Typography variant="h4">{selectedTest ? selectedTest.name : 'Aucun test sélectionné'}</Typography>
+              <Typography variant="h4">Aucun test sélectionné</Typography>
             </div>
           )}
         </Box>
       </div>
-
       <Modal open={isParamsModalOpen} onClose={handleParamsModalClose}>
-        <Box sx={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 400,
-          bgcolor: 'background.paper',
-          boxShadow: 24,
-          p: 4,
-          borderRadius: 2,
-        }}>
-          <Typography variant="h6" style={{ fontSize: '1.5em', color: 'rgba(35, 42, 86, 0.66)', textAlign: 'center', paddingBottom: '5%' }}>Paramètres du test</Typography>
-          {/* Afficher les paramètres du test ici */}
+    <Box sx={{
+      position: 'absolute',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      width: 500,
+      bgcolor: 'background.paper',
+      boxShadow: 24,
+      p: 4,
+      borderRadius: 2,
+    }}>
+      <Typography variant="h6" style={{ fontSize: '1.5em', color: 'rgba(35, 42, 86, 0.66)', textAlign: 'center', paddingBottom: '5%' }}>Paramètres du test</Typography>
+      {testParams ? (
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="body1"><strong>Nom du test:</strong> {testParams.name}</Typography>
+          <Typography variant="body1"><strong>Domaine:</strong> {testParams.domaine ? testParams.domaine.name : 'N/A'}</Typography>
+          <Typography variant="body1"><strong>Niveau:</strong> {testParams.level ? testParams.level.name : 'N/A'}</Typography>
+          <Typography variant="body1"><strong>Rôle:</strong> {testParams.role ? testParams.role.name : 'N/A'}</Typography>
+          <Typography variant="body1"><strong>Email de l'admin:</strong> {testParams.administrator ? testParams.administrator.email : 'N/A'}</Typography>
         </Box>
-      </Modal>
+      ) : (
+        <Typography variant="body1">Aucun paramètre disponible.</Typography>
+      )}
+    </Box>
+  </Modal>
+
+
 
       <Modal open={isCandidatesModalOpen} onClose={handleCandidatesModalClose}>
         <Box sx={{
@@ -192,14 +243,26 @@ function TestList() {
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          width: 400,
+          width: 500,
           bgcolor: 'background.paper',
           boxShadow: 24,
           p: 4,
           borderRadius: 2,
         }}>
           <Typography variant="h6" style={{ fontSize: '1.5em', color: 'rgba(35, 42, 86, 0.66)', textAlign: 'center', paddingBottom: '5%' }}>Candidats</Typography>
-          {/* Afficher les candidats ici */}
+          {candidates.length > 0 ? (
+            <Box sx={{ mt: 2 }}>
+              <List>
+                {candidates.map(candidate => (
+                  <ListItem key={candidate.id}>
+                    <ListItemText primary={candidate.name} secondary={candidate.email} />
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
+          ) : (
+            <Typography variant="body1">Aucun candidat disponible.</Typography>
+          )}
         </Box>
       </Modal>
 
@@ -215,22 +278,22 @@ function TestList() {
           p: 4,
           borderRadius: 2,
         }}>
-          <Typography variant="h6" style={{ fontSize: '1.5em', color: 'rgba(35, 42, 86, 0.66)', textAlign: 'center', paddingBottom: '5%' }}>Inviter un candidat</Typography>
+          <Typography variant="h6" component="h2">Inviter un candidat</Typography>
           <TextField
-            type="text"
-            name="name"
-            placeholder="Nom du candidat"
+            fullWidth
+            margin="normal"
+            label="Email du candidat"
             variant="outlined"
-            style={{ width: '100%', marginBottom: '20px' }}
           />
-          <TextField
-            type="email"
-            name="email"
-            placeholder="Email du candidat"
-            variant="outlined"
-            style={{ width: '100%', marginBottom: '20px' }}
-          />
-          <Button variant="contained" color="primary" sx={{ width: '25%', backgroundColor: '#232A56', color: '#fff', cursor: 'pointer', borderRadius: 30, margin: '0 auto' }}>Inviter</Button>
+          <Button
+            type="button"
+            variant="contained"
+            color="primary"
+            sx={{ marginTop: 2, borderRadius: 30, width: '100%', backgroundColor: '#232A56', color: '#fff', cursor: 'pointer', '&:hover': { backgroundColor: '#1A1E40', transform: 'scale(1.05)' } }}
+            onClick={handleInviteModalClose}
+          >
+            Envoyer l'invitation
+          </Button>
         </Box>
       </Modal>
     </div>
